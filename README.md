@@ -17,7 +17,7 @@ Requires Go 1.22+.
 
 ```bash
 # Set your GitHub username once
-mdboard config set github_user nrand
+mdboard config set github_user <USERNAME>
 
 # Create a new board
 mdboard new "Project Roadmap"
@@ -111,7 +111,7 @@ board: Project Roadmap
 Config is stored at `~/.mdboard/config.yaml`:
 
 ```yaml
-github_user: nrand
+github_user: <USERNAME>
 default_columns:
   - Backlog
   - In Progress
