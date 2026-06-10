@@ -5,7 +5,7 @@ Markdown-based kanban boards for the terminal. Each `.md` file is a board. Cards
 ## Install
 
 ```bash
-git clone https://github.com/nrand/mdboard
+git clone https://github.com/NathanielRand/mdboard
 cd mdboard
 chmod +x install.sh
 ./install.sh
