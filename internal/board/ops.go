@@ -2,6 +2,7 @@ package board
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -43,8 +44,16 @@ func FindCard(b *Board, title string) (*Card, *Column, int, error) {
 	return m.card, m.col, m.index, nil
 }
 
-// FindColumn searches for a column by name (case-insensitive partial match)
+// FindColumn searches for a column by name (case-insensitive partial match) or by
+// 1-based numeric index (e.g. "1" for the first column).
 func FindColumn(b *Board, name string) (*Column, error) {
+	if n, err := strconv.Atoi(name); err == nil {
+		if n >= 1 && n <= len(b.Columns) {
+			return b.Columns[n-1], nil
+		}
+		return nil, fmt.Errorf("column index %d out of range (1-%d)", n, len(b.Columns))
+	}
+
 	lower := strings.ToLower(name)
 	var matches []*Column
 	for _, col := range b.Columns {

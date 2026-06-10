@@ -8,10 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var moveCol string
+
 var moveCmd = &cobra.Command{
 	Use:   "move [card title] [column]",
 	Short: "Move a card to a different column",
-	Args:  cobra.MinimumNArgs(2),
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := resolveBoardPath(cmd)
 		if err != nil {
@@ -23,9 +25,17 @@ var moveCmd = &cobra.Command{
 			return err
 		}
 
-		// Last arg is the target column, rest is card title
-		colName := args[len(args)-1]
-		cardTitle := joinArgs(args[:len(args)-1])
+		var colName, cardTitle string
+		if moveCol != "" {
+			colName = moveCol
+			cardTitle = joinArgs(args)
+		} else {
+			if len(args) < 2 {
+				return fmt.Errorf("requires card title and column (or use -c/--col flag)")
+			}
+			colName = args[len(args)-1]
+			cardTitle = joinArgs(args[:len(args)-1])
+		}
 
 		card, fromCol, fromIdx, err := board.FindCard(b, cardTitle)
 		if err != nil {
@@ -54,5 +64,6 @@ var moveCmd = &cobra.Command{
 }
 
 func init() {
+	moveCmd.Flags().StringVarP(&moveCol, "col", "c", "", "Target column (name, partial match, or 1-based index)")
 	rootCmd.AddCommand(moveCmd)
 }

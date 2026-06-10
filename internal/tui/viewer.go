@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -98,6 +99,19 @@ func (c cardItem) Description() string {
 }
 func (c cardItem) FilterValue() string { return c.Card.Title }
 
+// ── Messages ────────────────────────────────────────────────────────────────
+
+type tickMsg time.Time
+type editorFinishedMsg struct {
+	err  error
+	file string
+	card *board.Card
+}
+type newCardFinishedMsg struct {
+	err  error
+	file string
+}
+
 // ── Model ───────────────────────────────────────────────────────────────────
 
 type Model struct {
@@ -107,6 +121,7 @@ type Model struct {
 	colIdx    int
 	width     int
 	height    int
+	lastMod   time.Time
 }
 
 func NewModel(b *board.Board, path string) Model {
@@ -114,6 +129,10 @@ func NewModel(b *board.Board, path string) Model {
 		board:     b,
 		boardPath: path,
 		lists:     make([]list.Model, len(b.Columns)),
+	}
+
+	if info, err := os.Stat(path); err == nil {
+		m.lastMod = info.ModTime()
 	}
 
 	for i, col := range b.Columns {
@@ -135,13 +154,13 @@ func NewModel(b *board.Board, path string) Model {
 	return m
 }
 
-func (m Model) Init() tea.Cmd { return nil }
-
-type editorFinishedMsg struct {
-	err  error
-	file string
-	card *board.Card
+func tickCmd() tea.Cmd {
+	return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
+
+func (m Model) Init() tea.Cmd { return tickCmd() }
 
 func openEditorCmd(m Model) tea.Cmd {
 	selected := m.lists[m.colIdx].SelectedItem()
@@ -161,12 +180,31 @@ func openEditorCmd(m Model) tea.Cmd {
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		editor = "nano" // Fallback
+		editor = "nano"
 	}
 
 	c := exec.Command(editor, f.Name())
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return editorFinishedMsg{err: err, file: f.Name(), card: card}
+	})
+}
+
+func openNewCardEditorCmd(m Model) tea.Cmd {
+	f, err := os.CreateTemp("", "mdboard-new-*.md")
+	if err != nil {
+		return nil
+	}
+	f.Write([]byte("# \n\n"))
+	f.Close()
+
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "nano"
+	}
+
+	c := exec.Command(editor, f.Name())
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		return newCardFinishedMsg{err: err, file: f.Name()}
 	})
 }
 
@@ -186,6 +224,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	listMsg := msg
 
 	switch msg := msg.(type) {
+	case tickMsg:
+		info, err := os.Stat(m.boardPath)
+		if err == nil && info.ModTime().After(m.lastMod) {
+			if b, err := markdown.Parse(m.boardPath); err == nil {
+				m.board = b
+				m.lastMod = info.ModTime()
+				m = m.refreshLists()
+			}
+		}
+		return m, tickCmd()
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -226,7 +275,42 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if newTitle != "" {
 				board.UpdateCard(msg.card, newTitle, newBody)
 				_ = markdown.Write(m.boardPath, m.board)
+				if info, err := os.Stat(m.boardPath); err == nil {
+					m.lastMod = info.ModTime()
+				}
 				m = m.refreshLists()
+			}
+		}
+		os.Remove(msg.file)
+		return m, nil
+
+	case newCardFinishedMsg:
+		if msg.err == nil {
+			content, _ := os.ReadFile(msg.file)
+			lines := strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
+
+			var title, body string
+			if len(lines) > 0 {
+				title = strings.TrimSpace(strings.TrimPrefix(lines[0], "# "))
+				if len(lines) > 1 {
+					body = strings.TrimSpace(strings.Join(lines[1:], "\n"))
+				}
+			}
+
+			if title != "" {
+				col := m.board.Columns[m.colIdx]
+				card, _, err := board.AddCard(m.board, title, col.Name)
+				if err == nil {
+					if body != "" {
+						card.Body = body
+					}
+					_ = markdown.Write(m.boardPath, m.board)
+					if info, err := os.Stat(m.boardPath); err == nil {
+						m.lastMod = info.ModTime()
+					}
+					m = m.refreshLists()
+					m.lists[m.colIdx].Select(len(col.Cards) - 1)
+				}
 			}
 		}
 		os.Remove(msg.file)
@@ -254,10 +338,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "h", "j", "k", "l":
 			return m, nil
 
-		case "e", "enter":
+		case "e":
 			return m, openEditorCmd(m)
 
-		case "A":
+		case "enter":
+			return m, openEditorCmd(m)
+
+		case "n":
+			return m, openNewCardEditorCmd(m)
+
+		case "A", "shift+left":
 			selected := m.lists[m.colIdx].SelectedItem()
 			if selected != nil && m.colIdx > 0 {
 				card := selected.(cardItem).Card
@@ -267,13 +357,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				board.MoveCard(m.board, card, fromCol, idx, toCol)
 				_ = markdown.Write(m.boardPath, m.board)
+				if info, err := os.Stat(m.boardPath); err == nil {
+					m.lastMod = info.ModTime()
+				}
 				m = m.refreshLists()
 
 				m.colIdx--
 				m.lists[m.colIdx].Select(len(toCol.Cards) - 1)
 			}
 			return m, nil
-		case "D":
+		case "D", "shift+right":
 			selected := m.lists[m.colIdx].SelectedItem()
 			if selected != nil && m.colIdx < len(m.board.Columns)-1 {
 				card := selected.(cardItem).Card
@@ -283,6 +376,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				board.MoveCard(m.board, card, fromCol, idx, toCol)
 				_ = markdown.Write(m.boardPath, m.board)
+				if info, err := os.Stat(m.boardPath); err == nil {
+					m.lastMod = info.ModTime()
+				}
 				m = m.refreshLists()
 
 				m.colIdx++
@@ -297,6 +393,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				col := m.board.Columns[m.colIdx]
 				if err := board.ShiftCard(col, idx, true); err == nil {
 					_ = markdown.Write(m.boardPath, m.board)
+					if info, err := os.Stat(m.boardPath); err == nil {
+						m.lastMod = info.ModTime()
+					}
 					m = m.refreshLists()
 					m.lists[m.colIdx].Select(idx - 1)
 				}
@@ -309,6 +408,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				col := m.board.Columns[m.colIdx]
 				if err := board.ShiftCard(col, idx, false); err == nil {
 					_ = markdown.Write(m.boardPath, m.board)
+					if info, err := os.Stat(m.boardPath); err == nil {
+						m.lastMod = info.ModTime()
+					}
 					m = m.refreshLists()
 					m.lists[m.colIdx].Select(idx + 1)
 				}
@@ -321,6 +423,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				card := selected.(cardItem).Card
 				_, _ = board.RemoveCard(m.board, card.Title)
 				_ = markdown.Write(m.boardPath, m.board)
+				if info, err := os.Stat(m.boardPath); err == nil {
+					m.lastMod = info.ModTime()
+				}
 				m = m.refreshLists()
 			}
 			return m, nil
@@ -380,7 +485,7 @@ func (m Model) View() string {
 		previewPane = renderPreviewPane(nil, m.width)
 	}
 
-	helpView := styleHelp.Copy().Width(m.width - 4).Render("←/→/a/d: cols • ↑/↓/w/s: cards • A/D: move ↔ • W/S: shift ↕ • e: edit • x: del • q: quit")
+	helpView := styleHelp.Copy().Width(m.width - 4).Render("←/→/a/d: cols • ↑/↓/w/s: cards • A/D/shift+←/→: move col • W/S: reorder • n: new • e: edit • x: del • q: quit")
 
 	boardView := lipgloss.JoinHorizontal(lipgloss.Top, cols...)
 
