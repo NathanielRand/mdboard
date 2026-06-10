@@ -55,6 +55,7 @@ board: MDBoard
 ### Shell completions — mdb completion bash/zsh/fish for card title and column tab-complete
 <!-- status: backlog | created: 2026-06-10 -->
 
+
 ## 🔄 In Progress
 
 ## 🧪 Testing
@@ -95,6 +96,12 @@ board: MDBoard
 <!-- status: done | created: 2026-06-10 -->
 
 ### Inline card creation in TUI — type title directly without opening editor for simple cards
+<!-- status: done | created: 2026-06-10 -->
+
+### uninstall actions
+<!-- status: done | created: 2026-06-10 -->
+
+### fix installation/doctor actions
 <!-- status: done | created: 2026-06-10 -->
 
 ### wasd for naivgation only

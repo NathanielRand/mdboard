@@ -110,6 +110,8 @@ mdb upgrade
 | `mdb config show` | Show current project config (walks up to find project root) |
 | `mdb config set <key> <value>` | Set a value in the project config (e.g. `git_user`) |
 | `mdb upgrade` | Fetch and install the latest version of mdboard |
+| `mdb doctor` | Check installation health and repair common issues (missing `mdb` alias, PATH, etc.) |
+| `mdb uninstall` | Remove mdboard and the `mdb` alias from `/usr/local/bin` |
 
 **Board auto-detection:** `mdb new` registers the board in `.mdboard/config.yaml` at the project root. After that, `mdb view` (and all other commands) automatically find the right board when run from anywhere within the project — no `--file` flag needed.
 
