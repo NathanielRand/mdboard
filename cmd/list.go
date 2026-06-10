@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nrand/mdboard/internal/markdown"
+	"github.com/NathanielRand/mdboard/internal/markdown"
 	"github.com/spf13/cobra"
 )
 

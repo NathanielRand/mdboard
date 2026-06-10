@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/nrand/mdboard/internal/markdown"
-	"github.com/nrand/mdboard/internal/tui"
+	"github.com/NathanielRand/mdboard/internal/markdown"
+	"github.com/NathanielRand/mdboard/internal/tui"
 	"github.com/spf13/cobra"
 )
 

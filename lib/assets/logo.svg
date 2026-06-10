@@ -1,0 +1,44 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="160" height="160" rx="26" fill="#0F172A"/>
+
+  <!-- Title bar -->
+  <rect x="14" y="14" width="132" height="24" rx="6" fill="#1E293B"/>
+  <circle cx="27" cy="26" r="4.5" fill="#EF4444" opacity="0.85"/>
+  <circle cx="42" cy="26" r="4.5" fill="#F59E0B" opacity="0.85"/>
+  <circle cx="57" cy="26" r="4.5" fill="#22C55E" opacity="0.85"/>
+  <rect x="70" y="21" width="64" height="10" rx="3" fill="#374151"/>
+
+  <!-- Column 1 -->
+  <rect x="14" y="46" width="38" height="100" rx="6" fill="#1E293B"/>
+  <rect x="19" y="53" width="28" height="6" rx="2" fill="#4B5563"/>
+  <rect x="19" y="65" width="28" height="20" rx="4" fill="#111827"/>
+  <rect x="23" y="70" width="16" height="3" rx="1.5" fill="#6B7280"/>
+  <rect x="23" y="76" width="11" height="2.5" rx="1.5" fill="#374151"/>
+  <rect x="19" y="90" width="28" height="20" rx="4" fill="#111827"/>
+  <rect x="23" y="95" width="19" height="3" rx="1.5" fill="#6B7280"/>
+  <rect x="23" y="101" width="13" height="2.5" rx="1.5" fill="#374151"/>
+
+  <!-- Column 2 (active, purple accent) -->
+  <rect x="61" y="46" width="38" height="100" rx="6" fill="#1E293B"/>
+  <rect x="66" y="53" width="28" height="6" rx="2" fill="#A78BFA"/>
+  <!-- active card with border -->
+  <rect x="66" y="65" width="28" height="20" rx="4" fill="#111827" stroke="#A78BFA" stroke-width="1.5"/>
+  <rect x="70" y="70" width="14" height="3" rx="1.5" fill="#A78BFA"/>
+  <rect x="70" y="76" width="10" height="2.5" rx="1.5" fill="#6D28D9"/>
+  <!-- cursor blink on active card -->
+  <rect x="84" y="70" width="2" height="3" rx="0.5" fill="#A78BFA" opacity="0.9"/>
+  <rect x="66" y="90" width="28" height="20" rx="4" fill="#111827"/>
+  <rect x="70" y="95" width="18" height="3" rx="1.5" fill="#6B7280"/>
+  <rect x="70" y="101" width="12" height="2.5" rx="1.5" fill="#374151"/>
+
+  <!-- Column 3 -->
+  <rect x="108" y="46" width="38" height="100" rx="6" fill="#1E293B"/>
+  <rect x="113" y="53" width="28" height="6" rx="2" fill="#4B5563"/>
+  <rect x="113" y="65" width="28" height="20" rx="4" fill="#111827"/>
+  <rect x="117" y="70" width="12" height="3" rx="1.5" fill="#6B7280"/>
+  <rect x="117" y="76" width="17" height="2.5" rx="1.5" fill="#374151"/>
+  <rect x="113" y="90" width="28" height="20" rx="4" fill="#111827"/>
+  <rect x="117" y="95" width="16" height="3" rx="1.5" fill="#6B7280"/>
+  <rect x="117" y="101" width="10" height="2.5" rx="1.5" fill="#374151"/>
+</svg>

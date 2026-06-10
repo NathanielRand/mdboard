@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nrand/mdboard/internal/board"
-	"github.com/nrand/mdboard/internal/markdown"
+	"github.com/NathanielRand/mdboard/internal/board"
+	"github.com/NathanielRand/mdboard/internal/markdown"
 )
 
 // ── Styles ──────────────────────────────────────────────────────────────────
@@ -107,10 +108,6 @@ type editorFinishedMsg struct {
 	file string
 	card *board.Card
 }
-type newCardFinishedMsg struct {
-	err  error
-	file string
-}
 
 // ── Model ───────────────────────────────────────────────────────────────────
 
@@ -122,6 +119,8 @@ type Model struct {
 	width     int
 	height    int
 	lastMod   time.Time
+	creating  bool
+	input     textinput.Model
 }
 
 func NewModel(b *board.Board, path string) Model {
@@ -134,6 +133,11 @@ func NewModel(b *board.Board, path string) Model {
 	if info, err := os.Stat(path); err == nil {
 		m.lastMod = info.ModTime()
 	}
+
+	inp := textinput.New()
+	inp.Placeholder = "Card title..."
+	inp.CharLimit = 200
+	m.input = inp
 
 	for i, col := range b.Columns {
 		items := make([]list.Item, len(col.Cards))
@@ -186,25 +190,6 @@ func openEditorCmd(m Model) tea.Cmd {
 	c := exec.Command(editor, f.Name())
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return editorFinishedMsg{err: err, file: f.Name(), card: card}
-	})
-}
-
-func openNewCardEditorCmd(m Model) tea.Cmd {
-	f, err := os.CreateTemp("", "mdboard-new-*.md")
-	if err != nil {
-		return nil
-	}
-	f.Write([]byte("# \n\n"))
-	f.Close()
-
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "nano"
-	}
-
-	c := exec.Command(editor, f.Name())
-	return tea.ExecProcess(c, func(err error) tea.Msg {
-		return newCardFinishedMsg{err: err, file: f.Name()}
 	})
 }
 
@@ -284,39 +269,36 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		os.Remove(msg.file)
 		return m, nil
 
-	case newCardFinishedMsg:
-		if msg.err == nil {
-			content, _ := os.ReadFile(msg.file)
-			lines := strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
-
-			var title, body string
-			if len(lines) > 0 {
-				title = strings.TrimSpace(strings.TrimPrefix(lines[0], "# "))
-				if len(lines) > 1 {
-					body = strings.TrimSpace(strings.Join(lines[1:], "\n"))
-				}
-			}
-
-			if title != "" {
-				col := m.board.Columns[m.colIdx]
-				card, _, err := board.AddCard(m.board, title, col.Name)
-				if err == nil {
-					if body != "" {
-						card.Body = body
+	case tea.KeyMsg:
+		if m.creating {
+			switch msg.String() {
+			case "enter":
+				title := strings.TrimSpace(m.input.Value())
+				if title != "" {
+					col := m.board.Columns[m.colIdx]
+					if _, _, err := board.AddCard(m.board, title, col.Name); err == nil {
+						_ = markdown.Write(m.boardPath, m.board)
+						if info, err := os.Stat(m.boardPath); err == nil {
+							m.lastMod = info.ModTime()
+						}
+						m = m.refreshLists()
+						m.lists[m.colIdx].Select(len(col.Cards) - 1)
 					}
-					_ = markdown.Write(m.boardPath, m.board)
-					if info, err := os.Stat(m.boardPath); err == nil {
-						m.lastMod = info.ModTime()
-					}
-					m = m.refreshLists()
-					m.lists[m.colIdx].Select(len(col.Cards) - 1)
 				}
+				m.creating = false
+				m.input.Blur()
+				m.input.Reset()
+				return m, nil
+			case "esc":
+				m.creating = false
+				m.input.Blur()
+				m.input.Reset()
+				return m, nil
+			default:
+				m.input, cmd = m.input.Update(msg)
+				return m, cmd
 			}
 		}
-		os.Remove(msg.file)
-		return m, nil
-
-	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
@@ -345,7 +327,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, openEditorCmd(m)
 
 		case "n":
-			return m, openNewCardEditorCmd(m)
+			m.creating = true
+			return m, m.input.Focus()
 
 		case "A", "shift+left":
 			selected := m.lists[m.colIdx].SelectedItem()
@@ -386,7 +369,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case "W":
+		case "W", "shift+up":
 			selected := m.lists[m.colIdx].SelectedItem()
 			if selected != nil {
 				idx := m.lists[m.colIdx].Index()
@@ -401,7 +384,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			return m, nil
-		case "S":
+		case "S", "shift+down":
 			selected := m.lists[m.colIdx].SelectedItem()
 			if selected != nil {
 				idx := m.lists[m.colIdx].Index()
@@ -485,7 +468,14 @@ func (m Model) View() string {
 		previewPane = renderPreviewPane(nil, m.width)
 	}
 
-	helpView := styleHelp.Copy().Width(m.width - 4).Render("←/→/a/d: cols • ↑/↓/w/s: cards • A/D/shift+←/→: move col • W/S: reorder • n: new • e: edit • x: del • q: quit")
+	var helpView string
+	if m.creating {
+		col := m.board.Columns[m.colIdx]
+		prompt := lipgloss.NewStyle().Foreground(colorMuted).Render(fmt.Sprintf("New card in [%s]  ·  enter to create  ·  esc to cancel", col.Name))
+		helpView = styleHelp.Copy().Width(m.width - 4).Render(prompt + "\n" + m.input.View())
+	} else {
+		helpView = styleHelp.Copy().Width(m.width - 4).Render("←/→ cols  ·  ↑/↓ cards  ·  shift+←/→ move col  ·  shift+↑/↓ reorder  ·  n new  ·  e edit  ·  x delete  ·  q quit")
+	}
 
 	boardView := lipgloss.JoinHorizontal(lipgloss.Top, cols...)
 

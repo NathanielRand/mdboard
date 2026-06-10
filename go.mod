@@ -1,4 +1,4 @@
-module github.com/nrand/mdboard
+module github.com/NathanielRand/mdboard
 
 go 1.24.2
 

@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
-	"github.com/nrand/mdboard/internal/config"
+	"github.com/NathanielRand/mdboard/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -14,16 +16,30 @@ var configCmd = &cobra.Command{
 
 var configShowCmd = &cobra.Command{
 	Use:   "show",
-	Short: "Print current config",
+	Short: "Print current project config",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load()
+		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Config file: %s\n\n", config.Path())
-		fmt.Printf("github_user:      %s\n", cfg.GitHubUser)
+		var cfg *config.Config
+		var cfgDir string
+		if projectDir, pc, _ := config.LoadProject(cwd); pc != nil {
+			cfg = pc
+			cfgDir = projectDir
+		} else {
+			cfg = &config.Config{}
+			cfgDir = cwd
+		}
+		fmt.Printf("Config file: %s\n\n", config.ProjectConfigPath(cfgDir))
+		fmt.Printf("board:            %s\n", cfg.Board)
+		fmt.Printf("git_user:      %s\n", cfg.GitUser)
 		fmt.Printf("default_columns:\n")
-		for _, c := range cfg.DefaultColumns {
+		cols := cfg.DefaultColumns
+		if len(cols) == 0 {
+			cols = config.Default().DefaultColumns
+		}
+		for _, c := range cols {
 			fmt.Printf("  - %s\n", c)
 		}
 		return nil
@@ -32,23 +48,28 @@ var configShowCmd = &cobra.Command{
 
 var configSetCmd = &cobra.Command{
 	Use:   "set [key] [value]",
-	Short: "Set a config value (e.g. github_user nrand)",
-	Args:  cobra.ExactArgs(2),
+	Short: "Set a config value in the project config (e.g. git_user yourname)",
+	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load()
+		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
 
-		key, val := args[0], args[1]
+		key := args[0]
+		val := strings.Join(args[1:], " ")
+
+		updates := &config.Config{}
 		switch key {
-		case "github_user":
-			cfg.GitHubUser = val
+		case "git_user":
+			updates.GitUser = val
+		case "default_columns":
+			return fmt.Errorf("use 'config set default_columns' is not supported via CLI — edit .mdboard/config.yaml directly")
 		default:
-			return fmt.Errorf("unknown config key %q (available: github_user)", key)
+			return fmt.Errorf("unknown config key %q (available: git_user)", key)
 		}
 
-		if err := config.Save(cfg); err != nil {
+		if err := config.SaveProject(cwd, updates); err != nil {
 			return err
 		}
 

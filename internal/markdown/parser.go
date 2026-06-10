@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nrand/mdboard/internal/board"
+	"github.com/NathanielRand/mdboard/internal/board"
 )
 
 var (

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sahilm/fuzzy"
 )
 
 // FindCard searches all columns for a card by title (case-insensitive partial match)
@@ -61,8 +63,8 @@ func FindColumn(b *Board, name string) (*Column, error) {
 			matches = append(matches, col)
 		}
 	}
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("no column matching %q", name)
+	if len(matches) == 1 {
+		return matches[0], nil
 	}
 	if len(matches) > 1 {
 		names := make([]string, len(matches))
@@ -71,7 +73,17 @@ func FindColumn(b *Board, name string) (*Column, error) {
 		}
 		return nil, fmt.Errorf("ambiguous column match: %s", strings.Join(names, ", "))
 	}
-	return matches[0], nil
+
+	// Fuzzy fallback
+	colNames := make([]string, len(b.Columns))
+	for i, col := range b.Columns {
+		colNames[i] = col.Name
+	}
+	results := fuzzy.Find(name, colNames)
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no column matching %q", name)
+	}
+	return b.Columns[results[0].Index], nil
 }
 
 // MoveCard removes a card from its current column and appends it to the target
@@ -124,7 +136,7 @@ func UpdateCard(card *Card, newTitle string, newBody string) {
 	}
 }
 
-// ClaimCard stamps a GitHub username on a card
+// ClaimCard stamps a git username on a card
 func ClaimCard(card *Card, user string) {
 	now := time.Now()
 	card.User = user

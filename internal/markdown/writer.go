@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nrand/mdboard/internal/board"
+	"github.com/NathanielRand/mdboard/internal/board"
 )
 
 // Write serializes a Board back to its markdown file

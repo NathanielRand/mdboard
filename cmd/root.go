@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/NathanielRand/mdboard/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -42,27 +44,34 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&boardFile, "file", "f", "", "Board file to operate on (default: mdboard.md)")
 }
 
-// resolveBoardPath finds the target board file for a command
+// resolveBoardPath finds the target board file for a command.
+// Precedence: --file flag → project config (walk-up) → mdboard.md fallback.
 func resolveBoardPath(cmd *cobra.Command) (string, error) {
-	// 1. If the user explicitly passed a file via --file, use it
+	// 1. Explicit --file flag always wins
 	if boardFile != "" {
 		return boardFile, nil
 	}
 
-	// 2. Default to looking for mdboard.md
-	defaultBoard := "mdboard.md"
+	// 2. Walk up from CWD looking for a project-local .mdboard/config.yaml
+	cwd, err := os.Getwd()
+	if err == nil {
+		if projectDir, pc, _ := config.LoadProject(cwd); pc != nil {
+			candidate := filepath.Join(projectDir, pc.Board)
+			if _, err := os.Stat(candidate); err == nil {
+				return candidate, nil
+			}
+		}
+	}
 
-	// Check if the default board exists in the current directory
-	_, err := os.Stat(defaultBoard)
+	// 3. Fall back to mdboard.md in CWD
+	defaultBoard := "mdboard.md"
+	_, err = os.Stat(defaultBoard)
 	if err == nil {
 		return defaultBoard, nil
 	}
-
-	// 3. Handle errors (file doesn't exist, or permission issues)
 	if os.IsNotExist(err) {
 		return "", fmt.Errorf("board file '%s' not found — run: mdboard new \"<title>\"", defaultBoard)
 	}
-
 	return "", err
 }
 

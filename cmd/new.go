@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nrand/mdboard/internal/board"
-	"github.com/nrand/mdboard/internal/config"
+	"github.com/NathanielRand/mdboard/internal/board"
+	"github.com/NathanielRand/mdboard/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -17,11 +17,6 @@ var newCmd = &cobra.Command{
 	Short: "Create a new board markdown file",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load()
-		if err != nil {
-			return err
-		}
-
 		title := strings.Join(args, " ")
 		slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 		filename := slug + ".md"
@@ -30,16 +25,31 @@ var newCmd = &cobra.Command{
 			return fmt.Errorf("file %s already exists", filename)
 		}
 
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("getting working directory: %w", err)
+		}
+
+		// Get default columns from existing project config, else hardcoded defaults.
+		// Never reads or creates the global ~/.mdboard/config.yaml.
+		defaultCols := config.Default().DefaultColumns
+		if pc, err := config.LoadProjectAt(cwd); err == nil && len(pc.DefaultColumns) > 0 {
+			defaultCols = pc.DefaultColumns
+		}
+
 		b := &board.Board{Title: title}
-		for _, colName := range cfg.DefaultColumns {
+		for _, colName := range defaultCols {
 			b.Columns = append(b.Columns, &board.Column{
 				Name:  colName,
 				Emoji: board.DefaultEmoji(colName),
 			})
 		}
 
-		// Write manually since we need clean output
 		if err := writeBoardFile(filename, b); err != nil {
+			return err
+		}
+
+		if err := config.SaveProject(cwd, &config.Config{Board: filename}); err != nil {
 			return err
 		}
 
@@ -65,7 +75,6 @@ func writeBoardFile(path string, b *board.Board) error {
 		}
 		sb.WriteString(fmt.Sprintf("## %s %s\n", emoji, col.Name))
 		if i == 0 {
-			// Seed backlog with a placeholder card
 			sb.WriteString(fmt.Sprintf("\n### Example card\n"))
 			sb.WriteString(fmt.Sprintf("<!-- status: backlog | created: %s -->\n", now))
 			sb.WriteString("- Add your notes here\n")

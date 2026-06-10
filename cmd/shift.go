@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nrand/mdboard/internal/board"
-	"github.com/nrand/mdboard/internal/markdown"
+	"github.com/NathanielRand/mdboard/internal/board"
+	"github.com/NathanielRand/mdboard/internal/markdown"
 	"github.com/spf13/cobra"
 )
 

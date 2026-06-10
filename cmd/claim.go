@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/nrand/mdboard/internal/board"
-	"github.com/nrand/mdboard/internal/config"
-	"github.com/nrand/mdboard/internal/markdown"
+	"github.com/NathanielRand/mdboard/internal/board"
+	"github.com/NathanielRand/mdboard/internal/config"
+	"github.com/NathanielRand/mdboard/internal/markdown"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,7 @@ var claimUser string
 
 var claimCmd = &cobra.Command{
 	Use:   "claim [card title]",
-	Short: "Claim a card with your GitHub username",
+	Short: "Claim a card with your git username",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := resolveBoardPath(cmd)
@@ -28,14 +29,13 @@ var claimCmd = &cobra.Command{
 
 		user := claimUser
 		if user == "" {
-			cfg, err := config.Load()
-			if err != nil {
-				return err
+			cwd, _ := os.Getwd()
+			if pc, err := config.LoadProjectAt(cwd); err == nil {
+				user = pc.GitUser
 			}
-			user = cfg.GitHubUser
 		}
 		if user == "" {
-			return fmt.Errorf("no GitHub user set — use --user flag or run: mdboard config set github_user <username>")
+			return fmt.Errorf("no git user set — use --user flag or run: mdboard config set git_user <username>")
 		}
 
 		card, _, _, err := board.FindCard(b, joinArgs(args))
@@ -103,7 +103,7 @@ var unclaimCmd = &cobra.Command{
 }
 
 func init() {
-	claimCmd.Flags().StringVarP(&claimUser, "user", "u", "", "GitHub username to claim with (overrides config)")
+	claimCmd.Flags().StringVarP(&claimUser, "user", "u", "", "Git username to claim with (overrides config)")
 	rootCmd.AddCommand(claimCmd)
 	rootCmd.AddCommand(unclaimCmd)
 }
