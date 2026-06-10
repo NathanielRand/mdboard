@@ -43,6 +43,22 @@ The board becomes a living specification — you decide priorities, the AI execu
 
 ---
 
+## Works great with teams
+
+Because your board is a markdown file that lives inside your repo, it travels with your code — no third-party accounts, no SaaS subscriptions, no browser tabs to keep open alongside your editor. Everything that applies to your source files applies to your board: branching, merging, pull requests, code review, and history.
+
+**Why teams choose mdboard over external tools:**
+
+- **No external dependencies.** Unlike Jira, Linear, Trello, Asana, or GitHub Projects, there is nothing to log into, sync, or pay for. The board is just a file.
+- **Git is the source of truth.** Card changes are commits. Every move, claim, and update is tracked, attributable, and reversible through the same `git log` your team already uses.
+- **Works with your existing workflow.** Open a feature branch, update the board, commit both together. The PR diff shows code changes *and* board changes side by side. Reviewers see exactly what was done and what moved.
+- **No context switching.** Stay in the terminal. No browser, no Electron app, no separate window — just `mdb view` from wherever you already are.
+- **Scales down to solo, up to teams.** A single-person project and a 10-person team use the same file format and the same commands. There is nothing to configure differently as the team grows.
+
+Your standup, your sprint, your backlog — all of it versioned alongside the code it describes.
+
+---
+
 ## Install
 
 ```bash
