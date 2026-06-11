@@ -16,7 +16,7 @@ var (
 	reColumnHeading    = regexp.MustCompile(`^##\s+(.+)$`)
 	reCardHeading      = regexp.MustCompile(`^###\s+(.+)$`)
 	reMetaComment      = regexp.MustCompile(`<!--(.+)-->`)
-	reEmoji            = regexp.MustCompile(`[\x{1F300}-\x{1FFFF}]\s*`)
+	reEmoji            = regexp.MustCompile(`(?:[\x{2600}-\x{27BF}]|[\x{1F300}-\x{1FFFF}])\s*`)
 )
 
 // Parse reads a markdown board file into a Board struct

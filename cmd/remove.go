@@ -6,16 +6,26 @@ import (
 	"os"
 	"strings"
 
-	"github.com/NathanielRand/mdboard/internal/board"
 	"github.com/NathanielRand/mdboard/internal/markdown"
 	"github.com/spf13/cobra"
+)
+
+var (
+	removeTask int
+	removeCol  string
 )
 
 var removeCmd = &cobra.Command{
 	Use:     "remove [card title]",
 	Aliases: []string{"rm", "delete"},
 	Short:   "Remove a card from the board",
-	Args:    cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		task, _ := cmd.Flags().GetInt("task")
+		if task == 0 && len(args) < 1 {
+			return fmt.Errorf("requires card title or --task/-t flag")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := resolveBoardPath(cmd)
 		if err != nil {
@@ -27,10 +37,7 @@ var removeCmd = &cobra.Command{
 			return err
 		}
 
-		title := joinArgs(args)
-
-		// Find the card first so we can show the exact title in the prompt
-		card, col, idx, err := board.FindCard(b, title)
+		card, col, idx, err := resolveCard(b, removeTask, removeCol, args)
 		if err != nil {
 			return err
 		}
@@ -55,5 +62,7 @@ var removeCmd = &cobra.Command{
 }
 
 func init() {
+	removeCmd.Flags().IntVarP(&removeTask, "task", "t", 0, "1-based card index within the column")
+	removeCmd.Flags().StringVarP(&removeCol, "col", "c", "", "Column for index-based lookup (name, partial, or index)")
 	rootCmd.AddCommand(removeCmd)
 }

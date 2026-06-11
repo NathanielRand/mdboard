@@ -11,14 +11,21 @@ import (
 var (
 	updateTitle string
 	updateBody  string
+	updateTask  int
+	updateCol   string
 )
 
 var updateCmd = &cobra.Command{
 	Use:   "update [card title]",
 	Short: "Edit a card's title or body content",
-	Args:  cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		task, _ := cmd.Flags().GetInt("task")
+		if task == 0 && len(args) < 1 {
+			return fmt.Errorf("requires card title or --task/-t flag")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// If neither flag is set, there's nothing to do
 		if updateTitle == "" && updateBody == "" {
 			return fmt.Errorf("must specify --title or --body to update")
 		}
@@ -33,8 +40,7 @@ var updateCmd = &cobra.Command{
 			return err
 		}
 
-		cardTitle := joinArgs(args)
-		card, col, _, err := board.FindCard(b, cardTitle)
+		card, col, _, err := resolveCard(b, updateTask, updateCol, args)
 		if err != nil {
 			return err
 		}
@@ -60,7 +66,9 @@ var updateCmd = &cobra.Command{
 }
 
 func init() {
-	updateCmd.Flags().StringVarP(&updateTitle, "title", "t", "", "New title for the card")
+	updateCmd.Flags().StringVar(&updateTitle, "title", "", "New title for the card")
 	updateCmd.Flags().StringVarP(&updateBody, "body", "b", "", "New body/content for the card")
+	updateCmd.Flags().IntVarP(&updateTask, "task", "t", 0, "1-based card index within the column")
+	updateCmd.Flags().StringVarP(&updateCol, "col", "c", "", "Column for index-based lookup (name, partial, or index)")
 	rootCmd.AddCommand(updateCmd)
 }

@@ -10,12 +10,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var claimUser string
+var (
+	claimUser string
+	claimTask int
+	claimCol  string
+)
 
 var claimCmd = &cobra.Command{
 	Use:   "claim [card title]",
 	Short: "Claim a card with your git username",
-	Args:  cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		task, _ := cmd.Flags().GetInt("task")
+		if task == 0 && len(args) < 1 {
+			return fmt.Errorf("requires card title or --task/-t flag")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := resolveBoardPath(cmd)
 		if err != nil {
@@ -38,7 +48,7 @@ var claimCmd = &cobra.Command{
 			return fmt.Errorf("no git user set — use --user flag or run: mdboard config set git_user <username>")
 		}
 
-		card, _, _, err := board.FindCard(b, joinArgs(args))
+		card, _, _, err := resolveCard(b, claimTask, claimCol, args)
 		if err != nil {
 			return err
 		}
@@ -65,10 +75,21 @@ var claimCmd = &cobra.Command{
 	},
 }
 
+var (
+	unclaimTask int
+	unclaimCol  string
+)
+
 var unclaimCmd = &cobra.Command{
 	Use:   "unclaim [card title]",
 	Short: "Remove your claim from a card",
-	Args:  cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		task, _ := cmd.Flags().GetInt("task")
+		if task == 0 && len(args) < 1 {
+			return fmt.Errorf("requires card title or --task/-t flag")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := resolveBoardPath(cmd)
 		if err != nil {
@@ -80,7 +101,7 @@ var unclaimCmd = &cobra.Command{
 			return err
 		}
 
-		card, _, _, err := board.FindCard(b, joinArgs(args))
+		card, _, _, err := resolveCard(b, unclaimTask, unclaimCol, args)
 		if err != nil {
 			return err
 		}
@@ -104,6 +125,12 @@ var unclaimCmd = &cobra.Command{
 
 func init() {
 	claimCmd.Flags().StringVarP(&claimUser, "user", "u", "", "Git username to claim with (overrides config)")
+	claimCmd.Flags().IntVarP(&claimTask, "task", "t", 0, "1-based card index within the column")
+	claimCmd.Flags().StringVarP(&claimCol, "col", "c", "", "Column for index-based lookup (name, partial, or index)")
+
+	unclaimCmd.Flags().IntVarP(&unclaimTask, "task", "t", 0, "1-based card index within the column")
+	unclaimCmd.Flags().StringVarP(&unclaimCol, "col", "c", "", "Column for index-based lookup (name, partial, or index)")
+
 	rootCmd.AddCommand(claimCmd)
 	rootCmd.AddCommand(unclaimCmd)
 }

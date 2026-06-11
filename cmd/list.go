@@ -72,21 +72,21 @@ var statusCmd = &cobra.Command{
 		abs, _ := filepath.Abs(path)
 		fmt.Printf("\n📋 %s\n%s\n\n", b.Title, abs)
 
-		for _, col := range b.Columns {
+		for ci, col := range b.Columns {
 			emoji := col.Emoji
 			if emoji == "" {
 				emoji = "•"
 			}
-			fmt.Printf("%s %s (%d)\n", emoji, col.Name, len(col.Cards))
+			fmt.Printf("[%d] %s %s (%d)\n", ci+1, emoji, col.Name, len(col.Cards))
 			if len(col.Cards) == 0 {
 				fmt.Println("   (empty)")
 			}
-			for _, card := range col.Cards {
+			for ti, card := range col.Cards {
 				claim := ""
 				if card.User != "" {
 					claim = fmt.Sprintf(" @%s", card.User)
 				}
-				fmt.Printf("   • %s%s\n", card.Title, claim)
+				fmt.Printf("   %d. %s%s\n", ti+1, card.Title, claim)
 			}
 			fmt.Println()
 		}

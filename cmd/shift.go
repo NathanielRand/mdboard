@@ -9,10 +9,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	shiftTask int
+	shiftCol  string
+)
+
 var shiftCmd = &cobra.Command{
 	Use:   "shift [card title] [up|down]",
 	Short: "Shift a card up or down within its column",
-	Args:  cobra.MinimumNArgs(2),
+	Args: func(cmd *cobra.Command, args []string) error {
+		task, _ := cmd.Flags().GetInt("task")
+		if task > 0 {
+			if len(args) < 1 {
+				return fmt.Errorf("requires direction: up or down")
+			}
+			return nil
+		}
+		if len(args) < 2 {
+			return fmt.Errorf("requires card title and direction (up|down), or use --task/-t with direction")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := resolveBoardPath(cmd)
 		if err != nil {
@@ -24,19 +41,32 @@ var shiftCmd = &cobra.Command{
 			return err
 		}
 
-		// Last arg is the direction, rest is the card title
-		direction := strings.ToLower(args[len(args)-1])
+		var direction string
+		var card *board.Card
+		var col *board.Column
+		var idx int
+
+		if shiftTask > 0 {
+			direction = strings.ToLower(args[0])
+			c, cl, i, err := resolveCard(b, shiftTask, shiftCol, nil)
+			if err != nil {
+				return err
+			}
+			card, col, idx = c, cl, i
+		} else {
+			direction = strings.ToLower(args[len(args)-1])
+			cardTitle := joinArgs(args[:len(args)-1])
+			c, cl, i, err := board.FindCard(b, cardTitle)
+			if err != nil {
+				return err
+			}
+			card, col, idx = c, cl, i
+		}
+
 		if direction != "up" && direction != "down" {
 			return fmt.Errorf("direction must be 'up' or 'down', got %q", direction)
 		}
-
-		cardTitle := joinArgs(args[:len(args)-1])
 		isUp := direction == "up"
-
-		card, col, idx, err := board.FindCard(b, cardTitle)
-		if err != nil {
-			return err
-		}
 
 		if err := board.ShiftCard(col, idx, isUp); err != nil {
 			// This catches if they try to move it out of bounds
@@ -53,5 +83,7 @@ var shiftCmd = &cobra.Command{
 }
 
 func init() {
+	shiftCmd.Flags().IntVarP(&shiftTask, "task", "t", 0, "1-based card index within the column")
+	shiftCmd.Flags().StringVarP(&shiftCol, "col", "c", "", "Column for index-based lookup (name, partial, or index)")
 	rootCmd.AddCommand(shiftCmd)
 }

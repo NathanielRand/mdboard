@@ -4,25 +4,31 @@ board: MDBoard
 
 ## 📋 Backlog
 
-### Due dates on cards — set via mdb add / mdb update --due, visual indicator in TUI when overdue
+### mdb archive — move all Done cards to a hidden archive section in the .md file
 <!-- status: backlog | created: 2026-06-10 -->
 
 ### Priority levels (p1/p2/p3) — sortable, shown as badge in card list
 <!-- status: backlog | created: 2026-06-10 -->
 
+### Due dates on cards — set via mdb add / mdb update --due, visual indicator in TUI when overdue
+<!-- status: backlog | created: 2026-06-10 -->
+
 ### Tags/labels — freeform, filterable via mdb list --tag
 <!-- status: backlog | created: 2026-06-10 -->
 
-### Card history — track when a card moved columns, mdb log <card>
+### sponsor us banner on root header top right
 <!-- status: backlog | created: 2026-06-10 -->
 
-### mdb archive — move all Done cards to a hidden archive section in the .md file
+### Card history — track when a card moved columns, mdb log <card>
 <!-- status: backlog | created: 2026-06-10 -->
 
 ### mdb stats — cards per column, avg time in each status, throughput over last 7/30 days
 <!-- status: backlog | created: 2026-06-10 -->
 
 ### WIP limits — config max_cards per column, warn or block when exceeded
+<!-- status: backlog | created: 2026-06-10 -->
+
+### rotating subtitle beneath root logo with wise words
 <!-- status: backlog | created: 2026-06-10 -->
 
 ### mdb search <query> — fuzzy search cards across all boards in a project
@@ -55,8 +61,31 @@ board: MDBoard
 ### Shell completions — mdb completion bash/zsh/fish for card title and column tab-complete
 <!-- status: backlog | created: 2026-06-10 -->
 
+### add open in browser with reflective web app
+<!-- status: backlog | created: 2026-06-10 -->
+
+### replace emoji on column title with pixel animations when focused or static when not with proper coloring/glow. show ghosted col index far left then animated icon then title for columns
+<!-- status: backlog | created: 2026-06-10 -->
+
+### default mdboard for project name aka board name or decoupled project title from board name of inherited board name from title. configure to allow all 3. default is mdboard board and mdboard project na
+<!-- status: backlog | created: 2026-06-10 -->
+
+### agent integration to connect convo directly instead of user having to send commands to agent for agent to full lookup
+<!-- status: backlog | created: 2026-06-10 -->
+
+### git commit/push action on connected repo
+<!-- status: backlog | created: 2026-06-10 -->
+
+### shift+up/down reorder broken in terminals that intercept those sequences — needs terminal-agnostic fix or alternative binding
+<!-- status: backlog | created: 2026-06-10 -->
+
+### project path with the name of this board top right corner root header ui. add version number to header ui too
+<!-- status: backlog | created: 2026-06-10 -->
 
 ## 🔄 In Progress
+
+### card index tagging
+<!-- status: in-progress | created: 2026-06-10 -->
 
 ## 🧪 Testing
 
@@ -78,7 +107,7 @@ board: MDBoard
 ### WASD/arrow keys control mirror; add keybind for all board actions in the TUI
 <!-- status: testing | created: 2026-06-09 -->
 
-## 📌 ✅ Done
+## 📌 Done
 
 ### creating a new board asks for project name and then creates an .md file with that name. we need a way for us to auto set that project name in the config for that project's root so that when "mdb view or mdboard view" command runs it auto detects the mdboard in that project's root to use instead of searching for all .md files.
 <!-- status: done | created: 2026-06-10 -->
@@ -109,4 +138,19 @@ board: MDBoard
 
 ### word wrap to show the full card text
 <!-- status: backlog | created: 2026-06-09 -->
+
+### version number at bottom/footer with update flag if version mismatch from repo.
+<!-- status: done | completed: 2026-06-10 | created: 2026-06-10 -->
+
+### pixel art mdb logo in TUI header
+<!-- status: done | completed: 2026-06-10 | created: 2026-06-10 -->
+
+### inline card rename in TUI (r key)
+<!-- status: done | completed: 2026-06-10 | created: 2026-06-10 -->
+
+### primary color configurable via .mdboard/config.yaml
+<!-- status: done | completed: 2026-06-10 | created: 2026-06-10 -->
+
+### removed card title character limit
+<!-- status: done | completed: 2026-06-10 | created: 2026-06-10 -->
 

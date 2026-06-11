@@ -166,6 +166,14 @@ func AddCard(b *Board, title, colName string) (*Card, *Column, error) {
 	return card, col, nil
 }
 
+// FindCardByIndex returns the card at the given 1-based position within a column.
+func FindCardByIndex(col *Column, cardIdx int) (*Card, int, error) {
+	if cardIdx < 1 || cardIdx > len(col.Cards) {
+		return nil, -1, fmt.Errorf("card index %d out of range (1-%d) in column %q", cardIdx, len(col.Cards), col.Name)
+	}
+	return col.Cards[cardIdx-1], cardIdx - 1, nil
+}
+
 // RemoveCard deletes a card from the board entirely
 func RemoveCard(b *Board, title string) (*Card, error) {
 	card, col, idx, err := FindCard(b, title)

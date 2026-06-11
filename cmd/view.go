@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+
+	"github.com/NathanielRand/mdboard/internal/config"
 	"github.com/NathanielRand/mdboard/internal/markdown"
 	"github.com/NathanielRand/mdboard/internal/tui"
 	"github.com/spf13/cobra"
@@ -10,7 +13,6 @@ var viewCmd = &cobra.Command{
 	Use:   "view",
 	Short: "Interactive TUI board viewer",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// 1. Resolve the path just like your other commands
 		path, err := resolveBoardPath(cmd)
 		if err != nil {
 			return err
@@ -21,8 +23,15 @@ var viewCmd = &cobra.Command{
 			return err
 		}
 
-		// 2. Pass BOTH the board and the path to the TUI
-		return tui.Run(b, path)
+		primaryColor := ""
+		gitUser := ""
+		cwd, _ := os.Getwd()
+		if pc, err := config.LoadProjectAt(cwd); err == nil {
+			primaryColor = pc.PrimaryColor
+			gitUser = pc.GitUser
+		}
+
+		return tui.Run(b, path, Version, primaryColor, gitUser)
 	},
 }
 

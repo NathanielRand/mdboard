@@ -16,6 +16,7 @@ type Config struct {
 	GitUser        string   `yaml:"git_user,omitempty"`
 	DefaultColumns []string `yaml:"default_columns,omitempty"`
 	Board          string   `yaml:"board,omitempty"`
+	PrimaryColor   string   `yaml:"primary_color,omitempty"`
 }
 
 // Default returns hardcoded defaults (no file I/O).
@@ -95,6 +96,9 @@ func SaveProject(dir string, updates *Config) error {
 	}
 	if len(updates.DefaultColumns) > 0 {
 		existing.DefaultColumns = updates.DefaultColumns
+	}
+	if updates.PrimaryColor != "" {
+		existing.PrimaryColor = updates.PrimaryColor
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
